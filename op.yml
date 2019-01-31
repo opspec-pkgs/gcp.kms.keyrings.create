@@ -1,0 +1,41 @@
+description: creates a google cloud platform key management service keyring (if it doesn't exist)
+inputs:
+  keyFile:
+    string:
+      description: key file for a GCP service account w/ `Cloud KMS Admin` role
+      isSecret: true
+  name:
+    string:
+      description: name of provisioned keyring
+      constraints: {minLength: 1}
+  projectId:
+    string:
+      description: id of the GCP project containing the keyring
+      constraints: {minLength: 1}
+  location:
+    string:
+      description: location of the keyring [list of locations](https://cloud.google.com/kms/docs/locations) for allowed values
+      constraints: { minLength: 1 }
+name: github.com/opspec-pkgs/gcp.kms.keyrings.create
+opspec: 0.1.6
+run:
+  serial:
+    # ensure service enabled
+    - op:
+        ref: github.com/opspec-pkgs/gcp.services.enable#1.0.0
+        inputs:
+          keyFile:
+          projectId:
+          service: cloudkms.googleapis.com
+    - container:
+        image: { ref: 'google/cloud-sdk:229.0.0-alpine' }
+        files:
+          /cmd.sh:
+          /keyFile: $(keyFile)
+        cmd: [ /cmd.sh ]
+        envVars:
+          CLOUDSDK_CORE_PROJECT: $(projectId)
+          CLOUDSDK_CORE_DISABLE_PROMPTS: 1
+          name:
+          location:
+version: 1.0.0
